@@ -357,3 +357,4 @@ MigrationBackup/
 .ionide/
 DirectXGame/DirectXGame.exe
 /DirectXGame/fbx_sdk/lib
+/DirectXGame/lib/fbx_sdk/lib
