@@ -1,7 +1,7 @@
 ﻿#pragma once
 
 #include "fbxsdk.h"
-#include "Model.h"
+#include "FbxModel.h"
 
 #include <d3d12.h>
 #include <d3dx12.h>
@@ -33,28 +33,28 @@ public: // メンバ関数 Member function
 
 	void Finalize();
 	
-	Model* LoadModelFromFile( const string &modelName );
+	FbxModel* LoadModelFromFile( const string &modelName );
 
 	// 再帰的にノード構成を解析 Recursively analyze node configuration
-	void ParseNodeRecursive( Model *fbxmodel, FbxNode *fbxNode, Node* parent = nullptr );
+	void ParseNodeRecursive( FbxModel *fbxmodel, FbxNode *fbxNode, Node* parent = nullptr );
 
 	// メッシュ読み取り Mesh read
-	void ParseMesh( Model *fbxmodel, FbxNode *fbxNode );
+	void ParseMesh( FbxModel *fbxmodel, FbxNode *fbxNode );
 
 	// 頂点座標読み取り Read vertex coordinates
-	void ParseMeshVertices( Model *fbxmodel, FbxMesh *fbxMesh );
+	void ParseMeshVertices( FbxModel *fbxmodel, FbxMesh *fbxMesh );
 
 	// 面情報読み取り Read surface information
-	void ParseMeshFaces( Model *fbxmodel, FbxMesh *fbxMesh );
+	void ParseMeshFaces( FbxModel *fbxmodel, FbxMesh *fbxMesh );
 
 	// マテリアル読み取り Material reading
-	void ParseMaterial( Model *fbxmodel, FbxNode *fbxNode );
+	void ParseMaterial( FbxModel *fbxmodel, FbxNode *fbxNode );
 
 	// スキニング情報読み取り Reading skinning information
-	void ParseSkin( Model *fbxmodel, FbxMesh *fbxMesh );
+	void ParseSkin( FbxModel *fbxmodel, FbxMesh *fbxMesh );
 
 	// テクスチャ読み取り Texture reading
-	void LoadTexture( Model *fbxmodel, const std::string &fullpath );
+	void LoadTexture( FbxModel *fbxmodel, const std::string &fullpath );
 
 	// ディレクトリを含んだファイルパスからファイル名を抽出する Extract filenames from file paths that include directories
 	std::string ExtractFileName( const std::string &path );
