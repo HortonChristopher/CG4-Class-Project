@@ -36,7 +36,7 @@ struct Node
 
 
 
-class FbxModel
+class Model
 {
 private: // エイリアス alias
 // Microsoft::WRL::を省略
@@ -148,6 +148,6 @@ public:
 	FbxScene *GetFbxScene() { return fbxScene; }
 
 	// デストラクタ Destructor
-	~FbxModel();
+	~Model();
 };
 

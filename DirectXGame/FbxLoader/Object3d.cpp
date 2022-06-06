@@ -1,4 +1,4 @@
-#include "FbxObject3d.h"
+#include "Object3d.h"
 #include "FbxLoader.h"
 
 #include<d3dcompiler.h>
@@ -7,13 +7,13 @@
 using namespace Microsoft::WRL;
 using namespace DirectX;
 
-ID3D12Device *FbxObject3d::device = nullptr;
-Camera *FbxObject3d::camera = nullptr;
+ID3D12Device *Object3d::device = nullptr;
+Camera *Object3d::camera = nullptr;
 
-ComPtr<ID3D12RootSignature> FbxObject3d::rootSignature;
-ComPtr<ID3D12PipelineState> FbxObject3d::pipelineState;
+ComPtr<ID3D12RootSignature> Object3d::rootSignature;
+ComPtr<ID3D12PipelineState> Object3d::pipelineState;
 
-void FbxObject3d::CreateGraphicsPipeline()
+void Object3d::CreateGraphicsPipeline()
 {
 	HRESULT result = S_FALSE;
 	ComPtr<ID3DBlob> vsBlob; // 頂点シェーダオブジェクト Vertex shader object
@@ -173,7 +173,7 @@ void FbxObject3d::CreateGraphicsPipeline()
 	if ( FAILED( result ) ) { assert( 0 ); }
 }
 
-void FbxObject3d::Initialize()
+void Object3d::Initialize()
 {
 	HRESULT result;
 	// 定数バッファの生成 Generate constant buffer
@@ -207,7 +207,7 @@ void FbxObject3d::Initialize()
 	frameTime.SetTime( 0, 0, 0, 1, 0, FbxTime::EMode::eFrames60 );
 }
 
-void FbxObject3d::Update()
+void Object3d::Update()
 {
 	XMMATRIX matScale, matRot, matTrans;
 
@@ -229,7 +229,7 @@ void FbxObject3d::Update()
 	const XMMATRIX &matViewProjection = camera->GetViewProjectionMatrix();
 
 	// モデルのメッシュトランスフォーム Model mesh transform
-	const XMMATRIX &modelTransform = fbxmodel->GetModelTransform();
+	const XMMATRIX &modelTransform = Model->GetModelTransform();
 
 	// カメラ座標 Camera coordinates
 	const XMFLOAT3 &cameraPos = camera->GetEye();
@@ -248,7 +248,7 @@ void FbxObject3d::Update()
 	}
 
 	// ボーン配列 Bone array
-	std::vector<FbxModel::Bone> &bones = fbxmodel->GetBones();
+	std::vector<Model::Bone> &bones = Model->GetBones();
 
 	if ( isPlay == false )
 	{
@@ -286,10 +286,10 @@ void FbxObject3d::Update()
 	constBuffSkin->Unmap( 0, nullptr );
 }
 
-void FbxObject3d::Draw( ID3D12GraphicsCommandList *cmdList )
+void Object3d::Draw( ID3D12GraphicsCommandList *cmdList )
 {
 	// モデルの割り当てがなければ描画しない Do not draw without model assignment
-	if ( fbxmodel == nullptr ) {
+	if ( Model == nullptr ) {
 		return;
 	}
 
@@ -305,12 +305,12 @@ void FbxObject3d::Draw( ID3D12GraphicsCommandList *cmdList )
 	cmdList->SetGraphicsRootConstantBufferView( 2, constBuffSkin->GetGPUVirtualAddress() );
 
 	// モデル描画 Model drawing
-	fbxmodel->Draw( cmdList );
+	Model->Draw( cmdList );
 }
 
-void FbxObject3d::PlayAnimation()
+void Object3d::PlayAnimation()
 {
-	FbxScene *fbxScene = fbxmodel->GetFbxScene();
+	FbxScene *fbxScene = Model->GetFbxScene();
 	// 0番目のアニメーション取得 Get 0th animation
 	FbxAnimStack *animstack = fbxScene->GetSrcObject<FbxAnimStack>( 0 );
 	// アニメーションの名前取得 Get the name of the animation

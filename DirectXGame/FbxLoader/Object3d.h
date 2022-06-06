@@ -7,10 +7,10 @@
 #include <d3dx12.h>
 #include <string>
 
-#include "FbxModel.h"
+#include "Model.h"
 #include "Camera.h"
 
-class FbxObject3d
+class Object3d
 {
 protected: // エイリアス alias
 // Microsoft::WRL::を省略
@@ -43,8 +43,8 @@ public: // サブクラス Subclass
 
 public: // 静的メンバ関数 Static member function
 // setter
-	static void SetDevice( ID3D12Device *device ) { FbxObject3d::device = device; }
-	static void SetCamera( Camera *camera ) { FbxObject3d::camera = camera; }
+	static void SetDevice( ID3D12Device *device ) { Object3d::device = device; }
+	static void SetCamera( Camera *camera ) { Object3d::camera = camera; }
 
 	/// <summary>
 	/// グラフィックパイプラインの生成 Generate graphic pipeline
@@ -73,7 +73,7 @@ public: // メンバ関数 Member function
 	void Update();
 	
 	// モデルのセット Set model
-	void SetModel( FbxModel *fbxmodel ) { this->fbxmodel = fbxmodel; }
+	void SetModel( Model *Model ) { this->Model = Model; }
 	
 	// 描画 drawing
 	void Draw( ID3D12GraphicsCommandList *cmdList );
@@ -105,7 +105,7 @@ protected: // メンバ変数 Member variables
 	// ローカルワールド変換行列 Local world transformation matrix
 	XMMATRIX matWorld;
 	// モデル model
-	FbxModel *fbxmodel = nullptr;
+	Model *Model = nullptr;
 
 	// 1フレーム 1 frame
 	FbxTime frameTime;
