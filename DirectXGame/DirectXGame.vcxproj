@@ -130,8 +130,6 @@
     <ClInclude Include="base\WinApp.h" />
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="Resources\shaders\FBXPS.hlsl" />
-    <FxCompile Include="Resources\shaders\FBXVS.hlsl" />
     <FxCompile Include="Resources\shaders\ParticleGS.hlsl">
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
@@ -164,7 +162,6 @@
     </FxCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Resources\shaders\FBX.hlsli" />
     <None Include="Resources\shaders\Particle.hlsli" />
     <None Include="Resources\shaders\Sprite.hlsli" />
   </ItemGroup>

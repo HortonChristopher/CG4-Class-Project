@@ -139,21 +139,12 @@
     <FxCompile Include="Resources\shaders\SpriteVS.hlsl">
       <Filter>シェーダーファイル</Filter>
     </FxCompile>
-    <FxCompile Include="Resources\shaders\FBXPS.hlsl">
-      <Filter>シェーダーファイル</Filter>
-    </FxCompile>
-    <FxCompile Include="Resources\shaders\FBXVS.hlsl">
-      <Filter>シェーダーファイル</Filter>
-    </FxCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\shaders\Particle.hlsli">
       <Filter>シェーダーファイル</Filter>
     </None>
     <None Include="Resources\shaders\Sprite.hlsli">
-      <Filter>シェーダーファイル</Filter>
-    </None>
-    <None Include="Resources\shaders\FBX.hlsli">
       <Filter>シェーダーファイル</Filter>
     </None>
   </ItemGroup>
