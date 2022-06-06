@@ -57,10 +57,10 @@
     <ClCompile Include="FbxLoader\FbxLoader.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="FbxLoader\Model.cpp">
+    <ClCompile Include="FbxLoader\FbxModel.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="FbxLoader\Object3d.cpp">
+    <ClCompile Include="FbxLoader\FbxObject3d.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
   </ItemGroup>
@@ -116,10 +116,10 @@
     <ClInclude Include="FbxLoader\FbxLoader.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="FbxLoader\Model.h">
+    <ClInclude Include="FbxLoader\FbxModel.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="FbxLoader\Object3d.h">
+    <ClInclude Include="FbxLoader\FbxObject3d.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
   </ItemGroup>

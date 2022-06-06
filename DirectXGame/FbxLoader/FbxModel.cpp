@@ -1,6 +1,6 @@
-#include "Model.h"
+#include "FbxModel.h"
 
-void Model::Draw( ID3D12GraphicsCommandList *cmdList )
+void FbxModel::Draw( ID3D12GraphicsCommandList *cmdList )
 {
 	// 頂点バッファをセット Set vertex buffer
 	cmdList->IASetVertexBuffers( 0, 1, &vbView );
@@ -19,13 +19,13 @@ void Model::Draw( ID3D12GraphicsCommandList *cmdList )
 	cmdList->DrawIndexedInstanced( (UINT)indices.size(), 1, 0, 0, 0 );
 }
 
-Model::~Model()
+FbxModel::~FbxModel()
 {
 	// FBXシーンの解放 Release the FBX scene
 	fbxScene->Destroy();
 }
 
-void Model::CreatBuffers( ID3D12Device *device )
+void FbxModel::CreatBuffers( ID3D12Device *device )
 {
 	HRESULT result;
 
