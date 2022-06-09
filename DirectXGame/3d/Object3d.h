@@ -22,6 +22,10 @@ protected: // Alias
 	using XMFLOAT4 = DirectX::XMFLOAT4;
 	using XMMATRIX = DirectX::XMMATRIX;
 
+public: // Constant
+	// Maximum Bone Number
+	static const int MAX_BONES = 32;
+
 public:
 	// Data structure for constant buffer (for coordinate transformation matrix)
 	struct ConstBufferDataTransform
@@ -29,6 +33,12 @@ public:
 		XMMATRIX viewproj; // View projection line departure
 		XMMATRIX world; // World matrix
 		XMFLOAT3 cameraPos; // Camera coordinates (world coordinates)
+	};
+
+	// Data structure for constant buffer (skinning)
+	struct ConstBufferDataSkin
+	{
+		XMMATRIX bones[MAX_BONES];
 	};
 
 public:
@@ -57,6 +67,11 @@ public:
 	/// </summary>
 	void SetModel(Model* model) { this->model = model; }
 
+	/// <summary>
+	/// Animation Initialization
+	/// </summary>
+	void PlayAnimation();
+
 protected:
 	// Constant Buffer
 	ComPtr<ID3D12Resource> constBuffTransform;
@@ -70,6 +85,9 @@ public:
 	static ComPtr<ID3D12RootSignature> rootsignature;
 	// Pipeline state
 	static ComPtr<ID3D12PipelineState> pipelinestate;
+
+	// Constant Buffer (skinning)
+	ComPtr<ID3D12Resource> constBuffSkin;
 
 private:
 	// Device
@@ -89,4 +107,19 @@ protected:
 	XMMATRIX matWorld;
 	// Model
 	Model* model = nullptr;
+
+	// 1 frame time
+	FbxTime frameTime;
+
+	// Animation start time
+	FbxTime startTime;
+
+	// Animation end time
+	FbxTime endTime;
+
+	// Animation current time
+	FbxTime currentTime;
+
+	// Animation is playing
+	bool isPlay = false;
 };

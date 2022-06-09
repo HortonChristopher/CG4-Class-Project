@@ -1,4 +1,5 @@
 #include "Object3d.h"
+#include "FbxLoader/FbxLoader.h"
 
 #include <d3dcompiler.h>
 #pragma comment(lib, "d3dcompiler.lib")
@@ -27,8 +28,29 @@ void Object3d::Initialize()
 		nullptr,
 		IID_PPV_ARGS(&constBuffTransform));
 
+	// Constant Buffer Creation (skinning)
+	result = device->CreateCommittedResource(
+		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD), // Upload possible
+		D3D12_HEAP_FLAG_NONE,
+		&CD3DX12_RESOURCE_DESC::Buffer((sizeof(ConstBufferDataSkin) + 0xff) & ~0xff),
+		D3D12_RESOURCE_STATE_GENERIC_READ,
+		nullptr,
+		IID_PPV_ARGS(&constBuffSkin));
+
+	// Data transfer to constant buffer
+	ConstBufferDataSkin* constMapSkin = nullptr;
+	result = constBuffSkin->Map(0, nullptr, (void**)&constMapSkin);
+	for (int i = 0; i < MAX_BONES; i++)
+	{
+		constMapSkin->bones[i] = XMMatrixIdentity();
+	}
+	constBuffSkin->Unmap(0, nullptr);
+
 	// Create graphics pipeline
 	Object3d::CreateGraphicsPipeline();
+
+	// Set time for 1 frame at 60fps
+	frameTime.SetTime(0, 0, 0, 1, 0, FbxTime::EMode::eFrames60);
 }
 
 void Object3d::Update()
@@ -70,6 +92,43 @@ void Object3d::Update()
 		constMap->cameraPos = cameraPos;
 		constBuffTransform->Unmap(0, nullptr);
 	}
+
+	// Bone array
+	std::vector<Model::Bone>& bones = model->GetBones();
+
+	if (isPlay == false)
+	{
+		PlayAnimation();
+	}
+
+	if (isPlay)
+	{
+		// Advance one frame
+		currentTime += frameTime;
+
+		// Return to the previous position after playing to the end
+		if (currentTime > endTime)
+		{
+			currentTime = startTime;
+		}
+	}
+
+	// Constant buffer data transfer
+	ConstBufferDataSkin* constMapSkin = nullptr;
+	result = constBuffSkin->Map(0, nullptr, (void**)&constMapSkin);
+
+	for (int i = 0; i < bones.size(); i++)
+	{
+		// Current posture matrix
+		XMMATRIX matCurrentPose;
+		// Get the current posture matrix
+		FbxAMatrix fbxCurrentPose = bones[i].fbxCluster->GetLink()->EvaluateGlobalTransform(currentTime);
+		// Convert to XMMATRIX
+		FbxLoader::ConvertMatrixFromFbx(&matCurrentPose, fbxCurrentPose);
+		// Synthesize into a skinning matrix
+		constMapSkin->bones[i] = bones[i].invInitialPose * matCurrentPose;
+	}
+	constBuffSkin->Unmap(0, nullptr);
 }
 
 void Object3d::CreateGraphicsPipeline()
@@ -144,6 +203,16 @@ void Object3d::CreateGraphicsPipeline()
 			D3D12_APPEND_ALIGNED_ELEMENT,
 			D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0
 		},
+		{ // Bone number to receive (4)
+			"BONEINDICES", 0, DXGI_FORMAT_R32G32B32A32_UINT, 0,
+			D3D12_APPEND_ALIGNED_ELEMENT,
+			D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0
+		},
+		{ // Bone skin weight (4)
+			"BONEWEIGHTS", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0,
+			D3D12_APPEND_ALIGNED_ELEMENT,
+			D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0
+		},
 	};
 
 	// Set the flow of the graphics pipeline
@@ -194,11 +263,14 @@ void Object3d::CreateGraphicsPipeline()
 	descRangeSRV.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0); // t0 register
 
 	// ルートパラメータ
-	CD3DX12_ROOT_PARAMETER rootparams[2];
+	//CD3DX12_ROOT_PARAMETER rootparams[2];
+	CD3DX12_ROOT_PARAMETER rootparams[3];
 	// CBV (for coordinate transformation matrix)
 	rootparams[0].InitAsConstantBufferView(0, 0, D3D12_SHADER_VISIBILITY_ALL);
 	// SRV (texture)
 	rootparams[1].InitAsDescriptorTable(1, &descRangeSRV, D3D12_SHADER_VISIBILITY_ALL);
+	// CBV (skinning)
+	rootparams[2].InitAsConstantBufferView(3, 0, D3D12_SHADER_VISIBILITY_ALL);
 
 	// Static sampler
 	CD3DX12_STATIC_SAMPLER_DESC samplerDesc = CD3DX12_STATIC_SAMPLER_DESC(0);
@@ -241,6 +313,35 @@ void Object3d::Draw(ID3D12GraphicsCommandList* cmdList)
 	// Set constant buffer view
 	cmdList->SetGraphicsRootConstantBufferView(0, constBuffTransform->GetGPUVirtualAddress());
 
+	// Set constant buffer view (skinning)
+	cmdList->SetGraphicsRootConstantBufferView(2, constBuffSkin->GetGPUVirtualAddress());
+
 	// Model Drawing
 	model->Draw(cmdList);
+}
+
+void Object3d::PlayAnimation()
+{
+	FbxScene* fbxScene = model->GetFbxScene();
+
+	// Get animation frame 0
+	FbxAnimStack* animstack = fbxScene->GetSrcObject<FbxAnimStack>(0);
+
+	// Get name of animation
+	const char* animstackname = animstack->GetName();
+
+	// Animation time information
+	FbxTakeInfo* takeinfo = fbxScene->GetTakeInfo(animstackname);
+
+	// Get start time
+	startTime = takeinfo->mLocalTimeSpan.GetStart();
+
+	// Get end time
+	endTime = takeinfo->mLocalTimeSpan.GetStop();
+
+	// Match start time
+	currentTime = startTime;
+
+	// Make request during playback
+	isPlay = true;
 }

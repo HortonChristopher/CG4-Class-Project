@@ -28,6 +28,13 @@ public:
 	static FbxLoader* GetInstance();
 
 	/// <summary>
+	/// Convert FBX matrix to XMMatrix
+	/// </summary>
+	/// <param name="dst">Write destination</param>
+	/// <param name="src">Original FBX matrix</param>
+	static void ConvertMatrixFromFbx(DirectX::XMMATRIX* dst, const FbxAMatrix& src);
+
+	/// <summary>
 	/// Initialization
 	/// </summary>
 	/// <param name="device">D3D12Device</param>
@@ -75,13 +82,6 @@ public:
 	void LoadTexture(Model* model, const std::string& fullpath);
 
 	std::string ExtractFileName(const std::string& path);
-
-	/// <summary>
-	/// Convert FBX matrix to XMMatrix
-	/// </summary>
-	/// <param name="dst">Write destination</param>
-	/// <param name="src">Original FBX matrix</param>
-	static void ConvertMatrixFromFbx(DirectX::XMMATRIX* dst, const FbxAMatrix& src);
 
 private:
 	// privateなコンストラクタ（シングルトンパターン）
