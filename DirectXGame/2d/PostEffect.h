@@ -16,6 +16,11 @@ public:
     void Initialize();
 
     /// <summary>
+    /// Generate pipeline
+    /// </summary>
+    void CreateGraphicsPipelineState();
+
+    /// <summary>
     /// PreDraw Scene
     /// </summary>
     void PreDrawScene(ID3D12GraphicsCommandList* cmdList);
@@ -45,6 +50,12 @@ public: // Member Variables
 
     // DSV descriptor heap
     ComPtr<ID3D12DescriptorHeap> descHeapDSV;
+
+    // Graphics pipeline state
+    ComPtr<ID3D12PipelineState> pipelineState;
+
+    // Root signature
+    ComPtr<ID3D12RootSignature> rootSignature;
 
     // Screen clear color
     static const float clearColor[4];
