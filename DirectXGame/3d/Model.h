@@ -101,6 +101,9 @@ public:
 	// getter
 	FbxScene* GetFbxScene() { return fbxScene; }
 
+	// getter
+	std::vector<Bone>& GetBones() { return bones; }
+
 private:
 	FbxScene* fbxScene = nullptr;
 
@@ -115,9 +118,6 @@ private:
 
 	// Bone Vector
 	std::vector<Bone> bones;
-
-	// getter
-	std::vector<Bone>& GetBones() { return bones; }
 
 	// Vertex data array
 	std::vector<VertexPosNormalUvSkin> vertices;

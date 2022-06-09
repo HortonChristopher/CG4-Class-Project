@@ -17,6 +17,20 @@ FbxLoader* FbxLoader::GetInstance()
     return &instance;
 }
 
+void FbxLoader::ConvertMatrixFromFbx(DirectX::XMMATRIX* dst, const FbxAMatrix& src)
+{
+    // Line
+    for (int i = 0; i < 4; i++)
+    {
+        // Column
+        for (int j = 0; j < 4; j++)
+        {
+            // 1 end copy
+            dst->r[i].m128_f32[j] = (float)src.Get(i, j);
+        }
+    }
+}
+
 void FbxLoader::Initialize(ID3D12Device* device)
 {
     // Reinitialization check
@@ -79,12 +93,12 @@ Model* FbxLoader::LoadModelFromFile(const string& modelName)
     // Analyze root node request and pour into model
     ParseNodeRecursive(model, fbxScene->GetRootNode());
 
-    // Create Buffer
-    model->CreateBuffers(device);
-
     // FBX scene release
     //fbxScene->Destroy();
     model->fbxScene = fbxScene;
+
+    // Create Buffer
+    model->CreateBuffers(device);
 
     return model;
 }
@@ -344,6 +358,14 @@ void FbxLoader::ParseSkin(Model* model, FbxMesh* fbxMesh)
     // If no skinning information, end
     if (fbxSkin == nullptr)
     {
+        // Process for each vertex
+        for (int i = 0; i < model->vertices.size(); i++)
+        {
+            // Make the shadow of the first bone (identity matrix) 100%
+            model->vertices[i].boneIndex[0] = 0;
+            model->vertices[i].boneWeight[0] = 1.0f;
+        }
+
         return;
     }
 
@@ -505,18 +527,4 @@ std::string FbxLoader::ExtractFileName(const std::string& path)
     }
 
     return path;
-}
-
-void FbxLoader::ConvertMatrixFromFbx(DirectX::XMMATRIX* dst, const FbxAMatrix& src)
-{
-    // Line
-    for (int i = 0; i < 4; i++)
-    {
-        // Column
-        for (int j = 0; j < 4; j++)
-        {
-            // 1 end copy
-            dst->r[i].m128_f32[j] = (float)src.Get(i, j);
-        }
-    }
 }
