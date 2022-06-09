@@ -134,6 +134,15 @@ private:
 	// Scratch image
 	DirectX::ScratchImage scratchImg = {};
 
+	// Albedo
+	DirectX::XMFLOAT3 baseColor = { 1,1,1 };
+	// Metallic degree (0 or 1)
+	float metalness = 0.0f;
+	// Specular reflectivity (0 ~ 1)
+	float specular = 0.5f;
+	// Roughness
+	float roughness = 0.0f;
+
 	// Vertex Buffer
 	ComPtr<ID3D12Resource> vertBuff;
 	// Index Buffer
