@@ -1,11 +1,17 @@
 #include "Model.h"
 
+Model::~Model()
+{
+	// Release FBX scene
+	fbxScene->Destroy();
+}
+
 void Model::CreateBuffers(ID3D12Device* device)
 {
 	HRESULT result;
 
 	// Overall size of vertex data
-	UINT sizeVB = static_cast<UINT>(sizeof(VertexPosNormalUv) * vertices.size());
+	UINT sizeVB = static_cast<UINT>(sizeof(VertexPosNormalUvSkin) * vertices.size());
 
 	// Vertex buffer generation
 	result = device->CreateCommittedResource(
@@ -17,7 +23,7 @@ void Model::CreateBuffers(ID3D12Device* device)
 		IID_PPV_ARGS(&vertBuff));
 
 	// Data transfer to vertex buffer
-	VertexPosNormalUv* vertMap = nullptr;
+	VertexPosNormalUvSkin* vertMap = nullptr;
 	result = vertBuff->Map(0, nullptr, (void**)&vertMap);
 	if (SUCCEEDED(result))
 	{
