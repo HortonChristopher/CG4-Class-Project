@@ -1,5 +1,6 @@
 #include "PostEffect.h"
 #include "WinApp.h"
+#include "Input.h"
 
 #include <d3dx12.h>
 #include <d3dcompiler.h>
@@ -82,35 +83,37 @@ void PostEffect::Initialize()
 		1, 0, 1, 0, D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET
 	);
 
-	// Texture Buffer generation
-	result = device->CreateCommittedResource(
-		&CD3DX12_HEAP_PROPERTIES(D3D12_CPU_PAGE_PROPERTY_WRITE_BACK, D3D12_MEMORY_POOL_L0),
-		D3D12_HEAP_FLAG_NONE,
-		&texresDesc,
-		D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
-		&CD3DX12_CLEAR_VALUE(DXGI_FORMAT_R8G8B8A8_UNORM, clearColor),
-		IID_PPV_ARGS(&texBuff));
+	for (int i = 0; i < 2; i++)
+	{
+		// Texture Buffer generation
+		result = device->CreateCommittedResource(
+			&CD3DX12_HEAP_PROPERTIES(D3D12_CPU_PAGE_PROPERTY_WRITE_BACK, D3D12_MEMORY_POOL_L0),
+			D3D12_HEAP_FLAG_NONE,
+			&texresDesc,
+			D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
+			&CD3DX12_CLEAR_VALUE(DXGI_FORMAT_R8G8B8A8_UNORM, clearColor),
+			IID_PPV_ARGS(&texBuff[i]));
+		assert(SUCCEEDED(result));
 
-	assert(SUCCEEDED(result));
-
-	// Clear texture in red
+		// Clear texture in red
 	//Number of pixels (1280 x 720 = 921600 pixels)
-	const UINT pixelCount = WinApp::window_width * WinApp::window_height;
+		const UINT pixelCount = WinApp::window_width * WinApp::window_height;
 
-	// Data size for one line of image
-	const UINT rowPitch = sizeof(UINT) * WinApp::window_width;
+		// Data size for one line of image
+		const UINT rowPitch = sizeof(UINT) * WinApp::window_width;
 
-	// Data size of the whole image
-	const UINT depthPitch = rowPitch * WinApp::window_height;
+		// Data size of the whole image
+		const UINT depthPitch = rowPitch * WinApp::window_height;
 
-	// Image
-	UINT* img = new UINT[pixelCount];
-	for (int i = 0; i < pixelCount; i++) { img[i] = 0xff0000ff; }
+		// Image
+		UINT* img = new UINT[pixelCount];
+		for (int j = 0; j < pixelCount; j++) { img[j] = 0xff0000ff; }
 
-	// Transfer data to texture buffer
-	result = texBuff->WriteToSubresource(0, nullptr, img, rowPitch, depthPitch);
-	assert(SUCCEEDED(result));
-	delete[] img;
+		// Transfer data to texture buffer
+		result = texBuff[i]->WriteToSubresource(0, nullptr, img, rowPitch, depthPitch);
+		assert(SUCCEEDED(result));
+		delete[] img;
+	}
 
 	// Descriptor heap setting for SRV
 	D3D12_DESCRIPTOR_HEAP_DESC srvDescHeapDesc = {};
@@ -130,7 +133,7 @@ void PostEffect::Initialize()
 	srvDesc.Texture2D.MipLevels = 1;
 
 	// Create SRV in descriptor heap
-	device->CreateShaderResourceView(texBuff.Get(), // Buffer associated with view
+	device->CreateShaderResourceView(texBuff[0].Get(), // Buffer associated with view
 		&srvDesc,
 		descHeapSRV->GetCPUDescriptorHandleForHeapStart()
 	);
@@ -138,17 +141,22 @@ void PostEffect::Initialize()
 	// Descriptor heap settings for RTV
 	D3D12_DESCRIPTOR_HEAP_DESC rtvDescHeapDesc{};
 	rtvDescHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
-	rtvDescHeapDesc.NumDescriptors = 1;
+	rtvDescHeapDesc.NumDescriptors = 2;
 
 	// Generate descriptor heap for RTV
 	result = device->CreateDescriptorHeap(&rtvDescHeapDesc, IID_PPV_ARGS(&descHeapRTV));
 	assert(SUCCEEDED(result));
 
-	// Create RTV as descriptor heap
-	device->CreateRenderTargetView(texBuff.Get(),
-		nullptr,
-		descHeapRTV->GetCPUDescriptorHandleForHeapStart()
-	);
+	for (int i = 0; i < 2; i++)
+	{
+		// Create RTV as descriptor heap
+		device->CreateRenderTargetView(texBuff[i].Get(),
+			nullptr,
+			CD3DX12_CPU_DESCRIPTOR_HANDLE(
+				descHeapRTV->GetCPUDescriptorHandleForHeapStart(), i,
+				device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV))
+		);
+	}
 
 	// Depth buffer resource settings
 	CD3DX12_RESOURCE_DESC depthResDesc =
@@ -334,31 +342,51 @@ void PostEffect::CreateGraphicsPipelineState()
 
 void PostEffect::PreDrawScene(ID3D12GraphicsCommandList* cmdList)
 {
-	// Change resource barrier (shader resource->drawable)
-	cmdList->ResourceBarrier(1,
-		&CD3DX12_RESOURCE_BARRIER::Transition(texBuff.Get(),
-			D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
-			D3D12_RESOURCE_STATE_RENDER_TARGET));
+	for (int i = 0; i < 2; i++)
+	{
+		// Change resource barrier (shader resource->drawable)
+		cmdList->ResourceBarrier(1,
+			&CD3DX12_RESOURCE_BARRIER::Transition(texBuff[i].Get(),
+				D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
+				D3D12_RESOURCE_STATE_RENDER_TARGET));
+	}
 
 	// Get handle of descriptor heap for render target view
-	D3D12_CPU_DESCRIPTOR_HANDLE rtvH = descHeapRTV->GetCPUDescriptorHandleForHeapStart();
+	D3D12_CPU_DESCRIPTOR_HANDLE rtvHs[2];
+	for (int i = 0; i < 2; i++)
+	{
+		rtvHs[i] = CD3DX12_CPU_DESCRIPTOR_HANDLE(
+			descHeapRTV->GetCPUDescriptorHandleForHeapStart(), i,
+			device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV)
+		);
+	}
 
 	// Get handle of depth stencil view descriptor heap
 	D3D12_CPU_DESCRIPTOR_HANDLE dsvH = descHeapDSV->GetCPUDescriptorHandleForHeapStart();
 
 	// Set render target
-	cmdList->OMSetRenderTargets(1, &rtvH, false, &dsvH);
+	cmdList->OMSetRenderTargets(2, rtvHs, false, &dsvH);
+
+	CD3DX12_VIEWPORT viewports[2];
+	CD3DX12_RECT scissorRects[2];
+
+	for (int i = 0; i < 2; i++)
+	{
+		viewports[i] = CD3DX12_VIEWPORT(0.0f, 0.0f, WinApp::window_width, WinApp::window_height);
+		scissorRects[i] = CD3DX12_RECT(0, 0, WinApp::window_width, WinApp::window_height);
+	}
 
 	// Viewport settings
-	cmdList->RSSetViewports(1, &CD3DX12_VIEWPORT(0.0f, 0.0f,
-		WinApp::window_width, WinApp::window_height));
+	cmdList->RSSetViewports(2, viewports);
 
 	// Scissoring short form setting
-	cmdList->RSSetScissorRects(1, &CD3DX12_RECT(0, 0, WinApp::window_width,
-		WinApp::window_height));
+	cmdList->RSSetScissorRects(2, scissorRects);
 
-	// Clear full screen
-	cmdList->ClearRenderTargetView(rtvH, clearColor, 0, nullptr);
+	for (int i = 0; i < 2; i++)
+	{
+		// Clear full screen
+		cmdList->ClearRenderTargetView(rtvHs[i], clearColor, 0, nullptr);
+	}
 
 	// Clear depth buffer
 	cmdList->ClearDepthStencilView(dsvH, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0,
@@ -367,6 +395,25 @@ void PostEffect::PreDrawScene(ID3D12GraphicsCommandList* cmdList)
 
 void PostEffect::Draw(ID3D12GraphicsCommandList* cmdList)
 {
+	if (Input::GetInstance()->TriggerKey(DIK_0))
+	{
+		// Create SRV in descriptor heap
+		static int tex = 0;
+
+		// Set texture number between 0 and 1
+		tex = (tex + 1) % 2;
+
+		D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc{}; // Setting
+		srvDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+		srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+		srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D; // 2D texture
+		srvDesc.Texture2D.MipLevels = 1;
+		device->CreateShaderResourceView(texBuff[tex].Get(), // Buffer to carry with view
+			&srvDesc,
+			descHeapSRV->GetCPUDescriptorHandleForHeapStart()
+		);
+	}
+
 	// World matrix update
 	//this->matWorld = XMMatrixIdentity();
 	//this->matWorld *= XMMatrixRotationZ(XMConvertToRadians(rotation));
@@ -409,7 +456,10 @@ void PostEffect::Draw(ID3D12GraphicsCommandList* cmdList)
 
 void PostEffect::PostDrawScene(ID3D12GraphicsCommandList* cmdList)
 {
-	// Change resource barrier (Drawable->Shader resource)
-	cmdList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(texBuff.Get(),
-		D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE));
+	for (int i = 0; i < 2; i++)
+	{
+		// Change resource barrier (Drawable->Shader resource)
+		cmdList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(texBuff[i].Get(),
+			D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE));
+	}
 }

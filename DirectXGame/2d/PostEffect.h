@@ -37,7 +37,7 @@ public:
 
 public: // Member Variables
     // Texture Buffer
-    ComPtr<ID3D12Resource> texBuff;
+    ComPtr<ID3D12Resource> texBuff[2];
 
     // SRV descript heap
     ComPtr<ID3D12DescriptorHeap> descHeapSRV;

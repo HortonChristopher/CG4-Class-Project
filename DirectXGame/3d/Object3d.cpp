@@ -243,6 +243,7 @@ void Object3d::CreateGraphicsPipeline()
 
 	// Blend state setting
 	gpipeline.BlendState.RenderTarget[0] = blenddesc;
+	gpipeline.BlendState.RenderTarget[1] = blenddesc;
 
 	// Depth buffer format
 	gpipeline.DSVFormat = DXGI_FORMAT_D32_FLOAT;
@@ -254,8 +255,9 @@ void Object3d::CreateGraphicsPipeline()
 	// Shape setting (triangle)
 	gpipeline.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
 
-	gpipeline.NumRenderTargets = 1;    // One drawing target
+	gpipeline.NumRenderTargets = 2;    // Two drawing targets
 	gpipeline.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM; // RGBA specified from 0 to 255
+	gpipeline.RTVFormats[1] = DXGI_FORMAT_R8G8B8A8_UNORM; // RGBA specified from 0 to 255
 	gpipeline.SampleDesc.Count = 1; // Sampling once per pixel
 
 	// Descriptor range
