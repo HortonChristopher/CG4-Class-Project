@@ -83,7 +83,8 @@ Model* FbxLoader::LoadModelFromFile(const string& modelName)
     model->CreateBuffers(device);
 
     // FBX scene release
-    fbxScene->Destroy();
+    //fbxScene->Destroy();
+    model->fbxScene = fbxScene;
 
     return model;
 }
@@ -166,6 +167,9 @@ void FbxLoader::ParseMesh(Model* model, FbxNode* fbxNode)
 
     // Material reading
     ParseMaterial(model, fbxNode);
+
+    // Skinning reading
+    ParseSkin(model, fbxMesh);
 }
 
 void FbxLoader::ParseMeshVertices(Model* model, FbxMesh* fbxMesh)
@@ -176,7 +180,7 @@ void FbxLoader::ParseMeshVertices(Model* model, FbxMesh* fbxMesh)
     const int controlPointsCount = fbxMesh->GetControlPointsCount();
 
     // Secure as many vertex data arrays as needed
-    Model::VertexPosNormalUv vert{};
+    Model::VertexPosNormalUvSkin vert{};
     model->vertices.resize(controlPointsCount, vert);
 
     // Get the vertex coordinate array of FBX mesh
@@ -185,7 +189,7 @@ void FbxLoader::ParseMeshVertices(Model* model, FbxMesh* fbxMesh)
     // Copy all vertex coordinates of FBX mesh to the array in the model
     for (int i = 0; i < controlPointsCount; i++)
     {
-        Model::VertexPosNormalUv& vertex = vertices[i];
+        Model::VertexPosNormalUvSkin& vertex = vertices[i];
         
         // Copy of coordinates
         vertex.pos.x = (float)pCoord[i][0];
@@ -227,7 +231,7 @@ void FbxLoader::ParseMeshFaces(Model* model, FbxMesh* fbxMesh)
             assert(index >= 0);
 
             // Read vertex normals
-            Model::VertexPosNormalUv& vertex = vertices[index];
+            Model::VertexPosNormalUvSkin& vertex = vertices[index];
             FbxVector4 normal;
             if (fbxMesh->GetPolygonVertexNormal(i, j, normal))
             {
@@ -332,6 +336,136 @@ void FbxLoader::ParseMaterial(Model* model, FbxNode* fbxNode)
     }
 }
 
+void FbxLoader::ParseSkin(Model* model, FbxMesh* fbxMesh)
+{
+    // Skinning information
+    FbxSkin* fbxSkin = static_cast<FbxSkin*>(fbxMesh->GetDeformer(0, FbxDeformer::eSkin));
+
+    // If no skinning information, end
+    if (fbxSkin == nullptr)
+    {
+        return;
+    }
+
+    // Bone array reference
+    std::vector<Model::Bone>& bones = model->bones;
+
+    // Bone number
+    int clusterCount = fbxSkin->GetClusterCount();
+    bones.reserve(clusterCount);
+
+    // About all bones
+    for (int i = 0; i < clusterCount; i++)
+    {
+        // FBX bone information
+        FbxCluster* fbxCluster = fbxSkin->GetCluster(i);
+
+        // Get name of node in bone itself
+        const char* boneName = fbxCluster->GetLink()->GetName();
+
+        // Add a new bone and get new bone's features
+        bones.emplace_back(Model::Bone(boneName));
+        Model::Bone& bone = bones.back();
+
+        // Introduce your own bones and FBX bones
+        bone.fbxCluster = fbxCluster;
+
+        // Get initial atitude matrix from FBX
+        FbxAMatrix fbxMat;
+        fbxCluster->GetTransformLinkMatrix(fbxMat);
+
+        // Convert to XMMatrix type
+        XMMATRIX initialPose;
+        ConvertMatrixFromFbx(&initialPose, fbxMat);
+
+        // Get the inverse matrix of hte initial attitude matrix
+        bone.invInitialPose = XMMatrixInverse(nullptr, initialPose);
+    }
+
+    // Bone number and Skin weight pair
+    struct WeightSet
+    {
+        UINT index;
+        float weight;
+    };
+
+    // Two-dimensional array (Jagg array)
+    // list: A complete list of bones where the vertices are affected
+    // vector: do it for all vertices
+    std::vector<std::list<WeightSet>>weightLists(model->vertices.size());
+
+    // About all bones
+    for (int i = 0; i < clusterCount; i++)
+    {
+        // FBX bone information
+        FbxCluster* fbxCluster = fbxSkin->GetCluster(i);
+
+        // Number of vertices that receive shadows on this bone
+        int controlPointIndicesCount = fbxCluster->GetControlPointIndicesCount();
+
+        // Array of vertices affected by this bone
+        int* controlPointIndices = fbxCluster->GetControlPointIndices();
+        double* controlPointWeights = fbxCluster->GetControlPointWeights();
+
+        // About all vertices affected by shadows
+        for (int j = 0; j < controlPointIndicesCount; j++)
+        {
+            // Vertex number
+            int vertIndex = controlPointIndices[j];
+
+            // Skin weight
+            float weight = (float)controlPointWeights[j];
+
+            // Pawn and weight pairs in the pawn list affected by vertex
+            weightLists[vertIndex].emplace_back(WeightSet{ (UINT)i, weight });
+        }
+    }
+
+    // Reference for rewriting vertex array
+    auto& vertices = model->vertices;
+
+    // Processing for each vertex
+    for (int i = 0; i < vertices.size(); i++)
+    {
+        // Select the 4 largest from the weights of the vertices
+        auto& weightList = weightLists[i];
+
+        // Specify a lambda expression for size comparison and sort downwards
+        weightList.sort(
+            [](auto const& lhs, auto const& rhs)
+            {
+                // Returns true if the left key is larger, false otherwise
+                return lhs.weight > rhs.weight;
+            });
+
+        int weightArrayIndex = 0;
+
+        // Obstacle sort from the weight list
+        for (auto& weightSet : weightList)
+        {
+            // Write to vertex data
+            vertices[i].boneIndex[weightArrayIndex] = weightSet.index;
+            vertices[i].boneWeight[weightArrayIndex] = weightSet.weight;
+
+            // End when reaching 4
+            if (++weightArrayIndex >= Model::MAX_BONE_INDICES)
+            {
+                float weight = 0.0f;
+
+                // Total weight for second and subsequent obstacles
+                for (int j = 1; j < Model::MAX_BONE_INDICES; j++)
+                {
+                    weight += vertices[i].boneWeight[j];
+                }
+
+                // Adjusted to otal 1.0f (100%)
+                vertices[i].boneWeight[0] = 1.0f - weight;
+                break;
+            }
+        }
+    }
+}
+
 void FbxLoader::LoadTexture(Model* model, const std::string& fullpath)
 {
     HRESULT result = S_FALSE;
@@ -371,4 +505,18 @@ std::string FbxLoader::ExtractFileName(const std::string& path)
     }
 
     return path;
+}
+
+void FbxLoader::ConvertMatrixFromFbx(DirectX::XMMATRIX* dst, const FbxAMatrix& src)
+{
+    // Line
+    for (int i = 0; i < 4; i++)
+    {
+        // Column
+        for (int j = 0; j < 4; j++)
+        {
+            // 1 end copy
+            dst->r[i].m128_f32[j] = (float)src.Get(i, j);
+        }
+    }
 }

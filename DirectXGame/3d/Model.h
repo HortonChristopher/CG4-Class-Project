@@ -8,6 +8,7 @@
 #include <wrl.h>
 #include <d3d12.h>
 #include <d3dx12.h>
+#include <fbxsdk.h>
 
 struct Node
 {
@@ -45,13 +46,39 @@ private: // Alias
 	using string = std::string;
 	template <class T> using vector = std::vector<T>;
 
+
+public: // Constant
+	// Maximum number of bone instances
+	static const int MAX_BONE_INDICES = 4;
+
 public: // Subclass
 	// Vertex data structure
-	struct VertexPosNormalUv
+	struct VertexPosNormalUvSkin
 	{
 		DirectX::XMFLOAT3 pos;
 		DirectX::XMFLOAT3 normal;
 		DirectX::XMFLOAT3 uv;
+		UINT boneIndex[MAX_BONE_INDICES]; // Bone Number
+		float boneWeight[MAX_BONE_INDICES]; // Bone Weight
+	};
+
+	// Bone structure
+	struct Bone
+	{
+		// Name
+		std::string name;
+
+		// Inverse matrix of initial posture
+		DirectX::XMMATRIX invInitialPose;
+
+		// Cluster (FBX example channel information)
+		FbxCluster* fbxCluster;
+
+		// Constructor
+		Bone(const std::string& name)
+		{
+			this->name = name;
+		}
 	};
 
 public:
@@ -59,6 +86,9 @@ public:
 	friend class FbxLoader;
 
 public:
+	// Destructor
+	~Model();
+
 	// Create Buffer
 	void CreateBuffers(ID3D12Device* device);
 
@@ -68,7 +98,12 @@ public:
 	// Get model transformation matrix
 	const XMMATRIX& GetModelTransform() { return meshNode->globalTransform; }
 
+	// getter
+	FbxScene* GetFbxScene() { return fbxScene; }
+
 private:
+	FbxScene* fbxScene = nullptr;
+
 	// Model Name
 	std::string name;
 
@@ -78,8 +113,14 @@ private:
 	// Node with mesh
 	Node* meshNode = nullptr;
 
+	// Bone Vector
+	std::vector<Bone> bones;
+
+	// getter
+	std::vector<Bone>& GetBones() { return bones; }
+
 	// Vertex data array
-	std::vector<VertexPosNormalUv> vertices;
+	std::vector<VertexPosNormalUvSkin> vertices;
 
 	// Vertex index array
 	std::vector<unsigned short> indices;

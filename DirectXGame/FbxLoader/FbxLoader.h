@@ -68,10 +68,20 @@ public:
 	// Material reading
 	void ParseMaterial(Model* model, FbxNode* fbxNode);
 
+	// Read Skinning Information
+	void ParseSkin(Model* model, FbxMesh* fbxMesh);
+
 	// Texture reading
 	void LoadTexture(Model* model, const std::string& fullpath);
 
 	std::string ExtractFileName(const std::string& path);
+
+	/// <summary>
+	/// Convert FBX matrix to XMMatrix
+	/// </summary>
+	/// <param name="dst">Write destination</param>
+	/// <param name="src">Original FBX matrix</param>
+	static void ConvertMatrixFromFbx(DirectX::XMMATRIX* dst, const FbxAMatrix& src);
 
 private:
 	// privateなコンストラクタ（シングルトンパターン）
