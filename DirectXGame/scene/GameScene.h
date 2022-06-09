@@ -10,6 +10,7 @@
 #include "Audio.h"
 #include "DebugCamera.h"
 #include "LightGroup.h"
+#include "Object3d.h"
 
 #include <vector>
 
@@ -72,5 +73,8 @@ private: // メンバ変数
 	ParticleManager* particleMan = nullptr;
 
 	LightGroup* lightGroup = nullptr;
+
+	Model* model1 = nullptr;
+	Object3d* object1 = nullptr;
 };
 

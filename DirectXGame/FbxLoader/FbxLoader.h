@@ -42,7 +42,8 @@ public:
 	/// Load FBX model from file
 	/// </summary>
 	/// <param name="modelName">Model Name</param>
-	void LoadModelFromFile(const string& modelName);
+	//void LoadModelFromFile(const string& modelName);
+	Model* LoadModelFromFile(const string& modelName);
 
 	/// <summary>
 	/// Recursively analyze node configuration

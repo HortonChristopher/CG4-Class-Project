@@ -4,9 +4,47 @@
 #include <vector>
 #include <DirectXMath.h>
 #include <DirectXTex.h>
+#include <Windows.h>
+#include <wrl.h>
+#include <d3d12.h>
+#include <d3dx12.h>
+
+struct Node
+{
+	// Name
+	std::string name;
+	// Local Scale
+	DirectX::XMVECTOR scaling = { 1,1,1,0 };
+	// Local Rotation
+	DirectX::XMVECTOR rotation = { 0,0,0,0 };
+	// Local Move/Translation
+	DirectX::XMVECTOR translation = { 0,0,0,1 };
+	// Local transformation matrix
+	DirectX::XMMATRIX transform;
+	// Global transformation matrix
+	DirectX::XMMATRIX globalTransform;
+	// Parent Node
+	Node* parent = nullptr;
+};
 
 class Model
 {
+private: // Alias
+	// Using Microsoft::WRL
+	template <class T> using ComPtr = Microsoft::WRL::ComPtr<T>;
+
+	// Using DirectX::
+	using XMFLOAT2 = DirectX::XMFLOAT2;
+	using XMFLOAT3 = DirectX::XMFLOAT3;
+	using XMFLOAT4 = DirectX::XMFLOAT4;
+	using XMMATRIX = DirectX::XMMATRIX;
+	using TexMetadata = DirectX::TexMetadata;
+	using ScratchImage = DirectX::ScratchImage;
+
+	// Using std::
+	using string = std::string;
+	template <class T> using vector = std::vector<T>;
+
 public: // Subclass
 	// Vertex data structure
 	struct VertexPosNormalUv
@@ -19,6 +57,16 @@ public: // Subclass
 public:
 	// Friend Class
 	friend class FbxLoader;
+
+public:
+	// Create Buffer
+	void CreateBuffers(ID3D12Device* device);
+
+	// Drawing
+	void Draw(ID3D12GraphicsCommandList* cmdList);
+
+	// Get model transformation matrix
+	const XMMATRIX& GetModelTransform() { return meshNode->globalTransform; }
 
 private:
 	// Model Name
@@ -44,22 +92,17 @@ private:
 	DirectX::TexMetadata metadata = {};
 	// Scratch image
 	DirectX::ScratchImage scratchImg = {};
-};
 
-struct Node
-{
-	// Name
-	std::string name;
-	// Local Scale
-	DirectX::XMVECTOR scaling = { 1,1,1,0 };
-	// Local Rotation
-	DirectX::XMVECTOR rotation = { 0,0,0,0 };
-	// Local Move/Translation
-	DirectX::XMVECTOR translation = { 0,0,0,1 };
-	// Local transformation matrix
-	DirectX::XMMATRIX transform;
-	// Global transformation matrix
-	DirectX::XMMATRIX globalTransform;
-	// Parent Node
-	Node* parent = nullptr;
+	// Vertex Buffer
+	ComPtr<ID3D12Resource> vertBuff;
+	// Index Buffer
+	ComPtr<ID3D12Resource> indexBuff;
+	// Texture Buffer
+	ComPtr<ID3D12Resource> texBuff;
+	// Vertex Buffer View
+	D3D12_VERTEX_BUFFER_VIEW vbView = {};
+	// Index Buffer View
+	D3D12_INDEX_BUFFER_VIEW ibView = {};
+	// SRV descriptor heap
+	ComPtr<ID3D12DescriptorHeap> descHeapSRV;
 };
