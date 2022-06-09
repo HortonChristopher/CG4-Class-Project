@@ -67,6 +67,13 @@ public:
 	/// </summary>
 	void SetModel(Model* model) { this->model = model; }
 
+	void SetRotation(XMFLOAT3 rotation) { this->rotation = rotation; }
+	void SetPosition(XMFLOAT3 position) { this->position = position; }
+	void SetScale(XMFLOAT3 scale) { this->scale = scale; }
+
+	const XMFLOAT3& GetPosition() { return position; }
+	const XMFLOAT3& GetRotation() { return rotation; }
+
 	/// <summary>
 	/// Animation Initialization
 	/// </summary>
