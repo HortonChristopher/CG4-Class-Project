@@ -1,5 +1,6 @@
 ﻿#include "GameScene.h"
 #include "FbxLoader/FbxLoader.h"
+
 #include <cassert>
 #include <sstream>
 #include <iomanip>
@@ -50,7 +51,7 @@ void GameScene::Initialize(DirectXCommon* dxCommon, Input* input, Audio * audio)
 	particleMan = ParticleManager::GetInstance();
 	particleMan->SetCamera(camera);
 
-	//FBX
+	// Specify the FBX model and read the file
 	FbxLoader::GetInstance()->LoadModelFromFile("cube");
 
 	// テクスチャ2番に読み込み
