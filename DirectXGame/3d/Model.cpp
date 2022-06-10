@@ -87,6 +87,27 @@ void Model::CreateBuffers(ID3D12Device* device)
 		(UINT)img->slicePitch // 1 sheet size
 	);
 
+	// Vertex Buffer Generation (Material)
+	result = device->CreateCommittedResource(
+		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
+		D3D12_HEAP_FLAG_NONE,
+		&CD3DX12_RESOURCE_DESC::Buffer((sizeof(ConstBufferDataMaterial) + 0xff) & ~0xff),
+		D3D12_RESOURCE_STATE_GENERIC_READ, // Texture specifications
+		nullptr,
+		IID_PPV_ARGS(&constBuffMaterial));
+
+	// Transfer Data to Vertex Buffer (Material)
+	ConstBufferDataMaterial* constMapMaterial = nullptr;
+	result = constBuffMaterial->Map(0, nullptr, (void**)&constMapMaterial);
+	if (SUCCEEDED(result))
+	{
+		constMapMaterial->baseColor = baseColor;
+		constMapMaterial->metalness = metalness;
+		constMapMaterial->specular = specular;
+		constMapMaterial->roughness = roughness;
+		constBuffMaterial->Unmap(0, nullptr);
+	}
+
 	// SRV descriptor heap creation
 	D3D12_DESCRIPTOR_HEAP_DESC descHeapDesc = {};
 	descHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
@@ -123,6 +144,9 @@ void Model::Draw(ID3D12GraphicsCommandList* cmdList)
 
 	// Shader Resource View set
 	cmdList->SetGraphicsRootDescriptorTable(1, descHeapSRV->GetGPUDescriptorHandleForHeapStart());
+
+	// Vertex Buffer View Set (Material)
+	cmdList->SetGraphicsRootConstantBufferView(2, constBuffMaterial->GetGPUVirtualAddress());
 
 	// Draw command
 	cmdList->DrawIndexedInstanced((UINT)indices.size(), 1, 0, 0, 0);

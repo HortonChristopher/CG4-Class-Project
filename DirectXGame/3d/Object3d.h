@@ -2,6 +2,7 @@
 
 #include "Model.h"
 #include "Camera.h"
+#include "LightGroup.h"
 
 #include <Windows.h>
 #include <wrl.h>
@@ -66,6 +67,9 @@ public:
 	static void SetDevice(ID3D12Device* device) { Object3d::device = device; }
 	static void SetCamera(Camera* camera) { Object3d::camera = camera; }
 
+	// setter
+	static void SetLightGroup(LightGroup* lightGroup) { Object3d::lightGroup = lightGroup; }
+
 	// Root signature
 	static ComPtr<ID3D12RootSignature> rootsignature;
 	// Pipeline state
@@ -77,6 +81,9 @@ private:
 
 	// Camera
 	static Camera* camera;
+
+	// Light Group
+	static LightGroup* lightGroup;
 
 protected:
 	// Local scale

@@ -11,6 +11,7 @@ using namespace DirectX;
 ///</summary>
 ID3D12Device* Object3d::device = nullptr;
 Camera* Object3d::camera = nullptr;
+LightGroup* Object3d::lightGroup = nullptr;
 
 ComPtr<ID3D12RootSignature> Object3d::rootsignature;
 ComPtr<ID3D12PipelineState> Object3d::pipelinestate;
@@ -194,11 +195,15 @@ void Object3d::CreateGraphicsPipeline()
 	descRangeSRV.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0); // t0 register
 
 	// ルートパラメータ
-	CD3DX12_ROOT_PARAMETER rootparams[2];
+	CD3DX12_ROOT_PARAMETER rootparams[4];
 	// CBV (for coordinate transformation matrix)
 	rootparams[0].InitAsConstantBufferView(0, 0, D3D12_SHADER_VISIBILITY_ALL);
 	// SRV (texture)
 	rootparams[1].InitAsDescriptorTable(1, &descRangeSRV, D3D12_SHADER_VISIBILITY_ALL);
+	// CBV (Material) b1 Register
+	rootparams[2].InitAsConstantBufferView(1, 0, D3D12_SHADER_VISIBILITY_ALL);
+	// CBV (Light) b2 Register
+	rootparams[3].InitAsConstantBufferView(2, 0, D3D12_SHADER_VISIBILITY_ALL);
 
 	// Static sampler
 	CD3DX12_STATIC_SAMPLER_DESC samplerDesc = CD3DX12_STATIC_SAMPLER_DESC(0);
@@ -240,6 +245,9 @@ void Object3d::Draw(ID3D12GraphicsCommandList* cmdList)
 
 	// Set constant buffer view
 	cmdList->SetGraphicsRootConstantBufferView(0, constBuffTransform->GetGPUVirtualAddress());
+
+	// Light Graphics Command
+	lightGroup->Draw(cmdList, 3);
 
 	// Model Drawing
 	model->Draw(cmdList);

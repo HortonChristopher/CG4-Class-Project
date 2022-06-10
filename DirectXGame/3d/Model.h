@@ -54,6 +54,21 @@ public: // Subclass
 		DirectX::XMFLOAT3 uv;
 	};
 
+	// Vertex Buffer Data (Material)
+	struct ConstBufferDataMaterial
+	{
+		// Albedo
+		DirectX::XMFLOAT3 baseColor;
+		// Metalness
+		float metalness;
+		// Specular Reflection Intensity
+		float specular;
+		// Roughness
+		float roughness;
+		// Padding (16 Bytes)
+		float pad[2];
+	};
+
 public:
 	// Friend Class
 	friend class FbxLoader;
@@ -114,4 +129,6 @@ private:
 	D3D12_INDEX_BUFFER_VIEW ibView = {};
 	// SRV descriptor heap
 	ComPtr<ID3D12DescriptorHeap> descHeapSRV;
+	// Vertex Buffer (material)
+	ComPtr<ID3D12Resource> constBuffMaterial;
 };

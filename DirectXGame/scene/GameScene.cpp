@@ -38,6 +38,10 @@ void GameScene::Initialize(DirectXCommon* dxCommon, Input* input, Audio * audio)
 	Object3d::SetDevice(dxCommon->GetDevice());
 	// Camera set
 	Object3d::SetCamera(camera);
+	// Graphics Pipeline set
+	//Object3d::CreateGraphicsPipeline();
+	// LightGroup Set
+	Object3d::SetLightGroup(lightGroup);
 
 	// デバッグテキスト用テクスチャ読み込み
 	if (!Sprite::LoadTexture(debugTextTexNumber, L"Resources/debugfont.png")) {
