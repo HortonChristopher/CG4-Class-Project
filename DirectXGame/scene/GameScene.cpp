@@ -34,6 +34,9 @@ void GameScene::Initialize(DirectXCommon* dxCommon, Input* input, Audio * audio)
 	// カメラ生成
 	camera = new DebugCamera(WinApp::window_width, WinApp::window_height, input);
 
+	// ライト生成
+	lightGroup = LightGroup::Create();
+
 	// Device set
 	Object3d::SetDevice(dxCommon->GetDevice());
 	// Camera set
@@ -73,9 +76,6 @@ void GameScene::Initialize(DirectXCommon* dxCommon, Input* input, Audio * audio)
 
 	// テクスチャ2番に読み込み
 	Sprite::LoadTexture(2, L"Resources/tex1.png");
-
-	// ライト生成
-	lightGroup = LightGroup::Create();
 
 	// カメラ注視点をセット
 	camera->SetTarget({0, 0, 0});
@@ -118,7 +118,7 @@ void GameScene::Draw()
 	object1->Draw(cmdList);
 
 	// パーティクルの描画
-	particleMan->Draw(cmdList);
+	//particleMan->Draw(cmdList);
 #pragma endregion
 
 #pragma region 前景スプライト描画
