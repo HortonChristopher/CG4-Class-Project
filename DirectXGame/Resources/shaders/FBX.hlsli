@@ -68,6 +68,7 @@ struct VSInput
 struct VSOutput
 {
 	float4 svpos : SV_POSITION; // Vertex coordinates for system
+	float3 worldpos : POS; // World Position
 	float3 normal : NORMAL; // Normal
 	float2 uv : TEXCOORD; // UV
 };

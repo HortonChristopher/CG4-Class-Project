@@ -9,6 +9,8 @@ VSOutput main(VSInput input)
 	VSOutput output;
 	// Coordinate change due to matrix
 	output.svpos = mul(mul(viewproj, world), input.pos);
+	// Pass the world position to next stage
+	output.worldpos = mul(world, input.pos).xyz;
 	// Pass the world normal to the final stage
 	output.normal = wnormal.xyz;
 	// Pass the input value as it is to the next stage

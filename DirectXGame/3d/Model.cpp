@@ -151,3 +151,19 @@ void Model::Draw(ID3D12GraphicsCommandList* cmdList)
 	// Draw command
 	cmdList->DrawIndexedInstanced((UINT)indices.size(), 1, 0, 0, 0);
 }
+
+void Model::TransferMaterial()
+{
+	HRESULT result;
+	//Transfer data to constant buffer
+	ConstBufferDataMaterial* constMapMaterial = nullptr;
+	result = constBuffMaterial->Map(0, nullptr, (void**)&constMapMaterial);
+	if (SUCCEEDED(result))
+	{
+		constMapMaterial->baseColor = baseColor;
+		constMapMaterial->metalness = metalness;
+		constMapMaterial->specular = specular;
+		constMapMaterial->roughness = roughness;
+		constBuffMaterial->Unmap(0, nullptr);
+	}
+}

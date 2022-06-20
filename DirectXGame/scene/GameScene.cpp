@@ -8,6 +8,11 @@
 
 using namespace DirectX;
 
+static float baseColor[3];
+static float metalness;
+static float specular;
+static float roughness;
+
 GameScene::GameScene()
 {
 }
@@ -74,6 +79,14 @@ void GameScene::Initialize(DirectXCommon* dxCommon, Input* input, Audio * audio)
 	object1->Initialize();
 	object1->SetModel(model1);
 
+	// Get initial value of the material parameter
+	baseColor[0] = model1->GetBaseColor().x;
+	baseColor[1] = model1->GetBaseColor().y;
+	baseColor[2] = model1->GetBaseColor().z;
+	metalness = model1->GetMetalness();
+	specular = model1->GetSpecular();
+	roughness = model1->GetRoughness();
+
 	// テクスチャ2番に読み込み
 	Sprite::LoadTexture(2, L"Resources/tex1.png");
 
@@ -87,6 +100,13 @@ void GameScene::Update()
 	lightGroup->Update();
 	camera->Update();
 	particleMan->Update();
+
+	// Reflect material parameters in the model
+	model1->SetBaseColor(XMFLOAT3(baseColor));
+	model1->SetMetalness(metalness);
+	model1->SetSpecular(specular);
+	model1->SetRoughness(roughness);
+	model1->TransferMaterial();
 
 	object1->Update();
 }
@@ -129,11 +149,22 @@ void GameScene::Draw()
 	/// ここに前景スプライトの描画処理を追加できる
 	/// </summary>
 
-
 	// デバッグテキストの描画
 	debugText->DrawAll(cmdList);
 
 	// スプライト描画後処理
 	Sprite::PostDraw();
+#pragma endregion
+
+#pragma region ImGui
+	// ImGui
+	ImGui::Begin("Material");
+	ImGui::SetWindowPos(ImVec2(0, 0));
+	ImGui::SetWindowSize(ImVec2(300, 130));
+	ImGui::ColorEdit3("baseColor", baseColor, ImGuiColorEditFlags_Float);
+	ImGui::SliderFloat("metalness", &metalness, 0, 1);
+	ImGui::SliderFloat("specular", &specular, 0, 1);
+	ImGui::SliderFloat("roughness", &roughness, 0, 1);
+	ImGui::End();
 #pragma endregion
 }
