@@ -304,100 +304,41 @@ void FbxLoader::ParseMaterial(Model* model, FbxNode* fbxNode)
 
         if (material)
         {
-            // Material name (Debug)
-            string name = material->GetName();
-
-            // Base color
-            const FbxProperty propBaseColor = FbxSurfaceMaterialUtils::GetProperty("baseColor", material);
-            if (propBaseColor.IsValid())
+            // Check if it is a FBXSurfaceLambert class
+            if (material->GetClassId().Is(FbxSurfaceLambert::ClassId))
             {
-                // Read value as FbxDouble3
-                FbxDouble3 baseColor = propBaseColor.Get<FbxDouble3>();
+                FbxSurfaceLambert* lambert = static_cast<FbxSurfaceLambert*>(material);
 
-                // Write the read value to model
-                model->baseColor.x = (float)baseColor.Buffer()[0];
-                model->baseColor.y = (float)baseColor.Buffer()[1];
-                model->baseColor.z = (float)baseColor.Buffer()[2];
+                // Optical light coefficient
+                FbxPropertyT<FbxDouble3> ambient = lambert->Ambient;
+                model->ambient.x = (float)ambient.Get()[0];
+                model->ambient.y = (float)ambient.Get()[1];
+                model->ambient.z = (float)ambient.Get()[2];
+
+                // Optical Light Reflection Coefficient
+                FbxPropertyT<FbxDouble3> diffuse = lambert->Diffuse;
+                model->diffuse.x = (float)diffuse.Get()[0];
+                model->diffuse.y = (float)diffuse.Get()[1];
+                model->diffuse.z = (float)diffuse.Get()[2];
             }
 
-            // Metallic Degree
-            const FbxProperty propMetalness = FbxSurfaceMaterialUtils::GetProperty("metalness", material);
-            if (propMetalness.IsValid())
+            // Remove diffuse texture
+            const FbxProperty diffuseProperty = material->FindProperty(FbxSurfaceMaterial::sDiffuse);
+            if (diffuseProperty.IsValid())
             {
-                // Write the read value to the model
-                model->metalness = propMetalness.Get<float>();
-            }
+                const FbxFileTexture* texture = diffuseProperty.GetSrcObject<FbxFileTexture>();
+                if (texture)
+                {
+                    const char* filepath = texture->GetFileName();
+                    
+                    // Extract file name from file bus
+                    string path_str(filepath);
+                    string name = ExtractFileName(path_str);
 
-            // Specular (Gamma?)
-            const FbxProperty propSpecular = FbxSurfaceMaterialUtils::GetProperty("specular", material);
-            if (propSpecular.IsValid())
-            {
-                // write the read value to the model
-                model->specular = propSpecular.Get<float>();
-            }
-
-            // Roughness
-            const FbxProperty propSpecularRoughness = FbxSurfaceMaterialUtils::GetProperty("specularRoughness", material);
-            if (propSpecularRoughness.IsValid())
-            {
-                // write the read value to the model
-                model->roughness = propSpecularRoughness.Get<float>();
-            }
-
-            // Subsurface
-            const FbxProperty propSubsurface = FbxSurfaceMaterialUtils::GetProperty("subsurface", material);
-            if (propSubsurface.IsValid())
-            {
-                // write the read value to the model
-                float subsurface = propSubsurface.Get<float>();
-            }
-
-            // Specular Color
-            const FbxProperty propSpecularColor = FbxSurfaceMaterialUtils::GetProperty("specularColor", material);
-            if (propSpecularColor.IsValid())
-            {
-                // write the read value to the model
-                FbxDouble3 specularColor = propSpecularColor.Get<FbxDouble3>();
-            }
-
-            // Specular Anisotropy
-            const FbxProperty propSpecularAnisotropy = FbxSurfaceMaterialUtils::GetProperty("spcularAnisotropy", material);
-            if (propSpecularAnisotropy.IsValid())
-            {
-                // write the read value to the model
-                float specularanisotropy = propSubsurface.Get<float>();
-            }
-
-            // Sheen Color
-            const FbxProperty propSheenColor = FbxSurfaceMaterialUtils::GetProperty("sheenColor", material);
-            if (propSheenColor.IsValid())
-            {
-                // write the read value to the model
-                FbxDouble3 sheenColor = propSheenColor.Get<FbxDouble3>();
-            }
-
-            // Sheen
-            const FbxProperty propSheen = FbxSurfaceMaterialUtils::GetProperty("sheen", material);
-            if (propSheen.IsValid())
-            {
-                // write the read value to the model
-                float sheen = propSheen.Get<float>();
-            }
-
-            // Coat Roughness
-            const FbxProperty propCoatRoughness = FbxSurfaceMaterialUtils::GetProperty("coatRoughness", material);
-            if (propCoatRoughness.IsValid())
-            {
-                // write the read value to the model
-                float coatRoughness = propCoatRoughness.Get<float>();
-            }
-
-            // Coat
-            const FbxProperty propCoat = FbxSurfaceMaterialUtils::GetProperty("coat", material);
-            if (propCoat.IsValid())
-            {
-                // write the read value to the model
-                float coat = propCoat.Get<float>();
+                    // Read texture
+                    LoadTexture(model, baseDirectory + model->name + "/" + name);
+                    textureLoaded = true;
+                }
             }
         }
 

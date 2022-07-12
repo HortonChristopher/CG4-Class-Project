@@ -61,7 +61,8 @@ void GameScene::Initialize(DirectXCommon* dxCommon, Input* input, Audio * audio)
 
 	// Specify the FBX model and read the file
 	//FbxLoader::GetInstance()->LoadModelFromFile("cube");
-	model1 = FbxLoader::GetInstance()->LoadModelFromFile("spherePBR");
+	//model1 = FbxLoader::GetInstance()->LoadModelFromFile("cube");
+	model1 = FbxLoader::GetInstance()->LoadModelFromFile("boneTest");
 
 	object1 = new Object3d;
 	object1->Initialize();
@@ -76,8 +77,9 @@ void GameScene::Initialize(DirectXCommon* dxCommon, Input* input, Audio * audio)
 	// カメラ注視点をセット
 	//camera->SetTarget({0, 20, 0});
 	//camera->SetDistance(100.0f);
-	camera->SetTarget({0, 0, 0});
-	camera->SetDistance(3.0f);
+	camera->SetTarget({0, 2.5f, 0});
+	camera->SetDistance(8.0f);
+	object1->SetRotation({ 0, 90, 0 });
 }
 
 void GameScene::Update()
