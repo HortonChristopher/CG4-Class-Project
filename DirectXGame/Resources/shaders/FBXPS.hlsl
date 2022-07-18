@@ -11,6 +11,35 @@ Texture2D<float4> tex : register(t0);
 // Sampler set in 0 slot
 SamplerState smp : register(s0);
 
+// UE4's GGX
+// Alpha = roughness ^ 2
+// NdotH = Half vector
+float DistributionGGX(float alpha, float NdotH)
+{
+	float alpha2 = alpha * alpha;
+	float t = NdotH * NdotH * (alpha2 - 1.0f) + 1.0f;
+	return alpha2 / (PI * t * t);
+}
+
+// Calculation of follar reflex
+float3 CookTorranceSpecular(float NdotL, float NdotV, float NdotH, float LdotH)
+{
+	// Distribution
+	float Ds = DistributionGGX(roughness * roughness, NdotH);
+
+	// Fresnel
+	float3 Fs = float3(1, 1, 1);
+
+	// Geometry Attenuation
+	float Gs = 0.1f;
+
+	// Denominator
+	float m = 4.0f * NdotL * NdotV;
+
+	// Combine to get the color of surface reflection
+	return Ds * Fs * Gs / m;
+}
+
 // Schlick near
 // f0 and f90 5 lerp
 // f0 : Reflectance when light is incident vertically
@@ -66,16 +95,19 @@ float3 BRDF(float3 L, float3 V)
 	//float3 diffuseColor = diffuseReflectance * NdotL * baseColor * (1 - metalness);
 	float3 diffuseColor = diffuseReflectance * Fd * baseColor * (1 - metalness); // Schlick
 
-	// Insert the specular formula here
-	float intensity = saturate(NdotV);
-	float reflection = pow(intensity, 20);
-	float3 specularColor = (0,0,0);
-	float3 specular = specularColor * reflection;
+	// Specular Color
+	float3 specularColor = CookTorranceSpecular(NdotL, NdotV, NdotH, LdotH);
 
-	//diffuseColor *= intensity;
-	diffuseColor += specular;
+	//// Insert the specular formula here
+	//float intensity = saturate(NdotV);
+	//float reflection = pow(intensity, 20);
+	//float3 specularColor = (0,0,0);
+	//float3 specular = specularColor * reflection;
 
-	return diffuseColor;
+	////diffuseColor *= intensity;
+	//diffuseColor += specular;
+
+	return diffuseColor + specularColor;
 }
 
 // Entry point
