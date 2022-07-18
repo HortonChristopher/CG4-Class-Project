@@ -73,7 +73,8 @@ void GameScene::Initialize(DirectXCommon* dxCommon, Input* input, Audio * audio)
 
 	// Specify the FBX model and read the file
 	//FbxLoader::GetInstance()->LoadModelFromFile("cube");
-	model1 = FbxLoader::GetInstance()->LoadModelFromFile("spherePBR");
+	//model1 = FbxLoader::GetInstance()->LoadModelFromFile("spherePBR");
+	model1 = FbxLoader::GetInstance()->LoadModelFromFile("SpiralPBR");
 
 	object1 = new Object3d;
 	object1->Initialize();

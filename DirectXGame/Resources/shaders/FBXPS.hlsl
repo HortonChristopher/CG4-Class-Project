@@ -11,6 +11,44 @@ Texture2D<float4> tex : register(t0);
 // Sampler set in 0 slot
 SamplerState smp : register(s0);
 
+// UE4 Smith Model
+float GeometricSmith(float cosine)
+{
+	float k = (roughness + 1.0f);
+
+	k = k * k / 8.0f;
+
+	return cosine / (cosine * (1.0f - k) + k);
+}
+
+float3 SchlickFresnel3(float3 f0, float3 f90, float cosine)
+{
+	float m = saturate(1 - cosine);
+	float m2 = m * m;
+	float m5 = m2 * m2 * m;
+	return lerp(f0, f90, m5);
+}
+
+// Disney Fresnel
+float3 DisneyFresnel(float LdotH)
+{
+	// Fresnel
+	// Luminance
+	float luminance = 0.3f * baseColor.r + 0.6f * baseColor.g + 0.1f * baseColor.b;
+
+	// Tint
+	float3 tintColor = baseColor / luminance;
+
+	// NonMetalColor
+	float3 nonMetalColor = specular * 0.08f * tintColor;
+
+	// Metalness Specular Color
+	float3 specularColor = lerp(nonMetalColor, baseColor, metalness);
+
+	// NdotH SchlickFresnel
+	return SchlickFresnel3(specularColor, float3(1, 1, 1), LdotH);
+}
+
 // UE4's GGX
 // Alpha = roughness ^ 2
 // NdotH = Half vector
@@ -28,10 +66,13 @@ float3 CookTorranceSpecular(float NdotL, float NdotV, float NdotH, float LdotH)
 	float Ds = DistributionGGX(roughness * roughness, NdotH);
 
 	// Fresnel
-	float3 Fs = float3(1, 1, 1);
+	//float3 Fs = float3(1, 1, 1);
+	float3 Fs = DisneyFresnel(LdotH);
 
 	// Geometry Attenuation
-	float Gs = 0.1f;
+	//float Gs = 0.1f;
+	//float Gs = 1.0f;
+	float Gs = GeometricSmith(NdotL) * GeometricSmith(NdotL);
 
 	// Denominator
 	float m = 4.0f * NdotL * NdotV;
