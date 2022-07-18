@@ -27,6 +27,22 @@ struct Node
 	Node* parent = nullptr;
 };
 
+// Texture Data
+struct TextureData
+{
+	// Texture Metadata
+	DirectX::TexMetadata metadata = {};
+
+	// Scratch Image
+	DirectX::ScratchImage scratchImg = {};
+
+	// Texture Buffer
+	Microsoft::WRL::ComPtr<ID3D12Resource> texbuff;
+
+	// SRV's GPU handle
+	CD3DX12_GPU_DESCRIPTOR_HANDLE gpuHandle;
+};
+
 class Model
 {
 private: // Alias
@@ -86,6 +102,8 @@ public:
 	// Material parameter transfer
 	void TransferMaterial();
 
+	void CreateTexture(TextureData& texture, ID3D12Device* device, int srvIndex);
+
 public:
 	// getter
 	const DirectX::XMFLOAT3& GetBaseColor() { return baseColor; }
@@ -98,6 +116,10 @@ public:
 	void SetMetalness(float _metalness) { metalness = _metalness; }
 	void SetSpecular(float _specular) { specular = _specular; }
 	void SetRoughness(float _roughness) { roughness = _roughness; }
+
+public:
+	// Maximum Textures
+	static const int MAX_TEXTURES = 4;
 
 private:
 	// Model Name
@@ -120,9 +142,18 @@ private:
 	// Diffuse coefficient
 	DirectX::XMFLOAT3 diffuse = { 1,1,1 };
 	// Texture metadata
-	DirectX::TexMetadata metadata = {};
+	//DirectX::TexMetadata metadata = {};
 	// Scratch image
-	DirectX::ScratchImage scratchImg = {};
+	//DirectX::ScratchImage scratchImg = {};
+
+	// Base Texture
+	TextureData baseTexture;
+	// Metalness Texture
+	TextureData metalnessTexture;
+	// Normal Texture
+	TextureData normalTexture;
+	// Roughness Texture
+	TextureData roughnessTexture;
 
 	// Albedo
 	DirectX::XMFLOAT3 baseColor = { 1,1,1 };
@@ -138,7 +169,7 @@ private:
 	// Index Buffer
 	ComPtr<ID3D12Resource> indexBuff;
 	// Texture Buffer
-	ComPtr<ID3D12Resource> texBuff;
+	//ComPtr<ID3D12Resource> texBuff;
 	// Vertex Buffer View
 	D3D12_VERTEX_BUFFER_VIEW vbView = {};
 	// Index Buffer View

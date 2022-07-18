@@ -5,8 +5,17 @@ static const float PI = 3.141592654f;
 // Reflection normal vector
 static float3 N;
 
+static float3 s_baseColor;
+
+static float s_metalness;
+
+static float s_roughness;
+
 // Texture set for 0 slot
-Texture2D<float4> tex : register(t0);
+Texture2D<float4> baseTex : register(t0);
+Texture2D<float4> metalnessTex : register(t1);
+Texture2D<float4> normalTex : register(t2);
+Texture2D<float4> roughnessTex : register(t3);
 
 // Sampler set in 0 slot
 SamplerState smp : register(s0);
@@ -14,7 +23,7 @@ SamplerState smp : register(s0);
 // UE4 Smith Model
 float GeometricSmith(float cosine)
 {
-	float k = (roughness + 1.0f);
+	float k = (s_roughness + 1.0f);
 
 	k = k * k / 8.0f;
 
@@ -34,16 +43,18 @@ float3 DisneyFresnel(float LdotH)
 {
 	// Fresnel
 	// Luminance
-	float luminance = 0.3f * baseColor.r + 0.6f * baseColor.g + 0.1f * baseColor.b;
+	//float luminance = 0.3f * baseColor.r + 0.6f * baseColor.g + 0.1f * baseColor.b;
+	float luminance = 0.3f * s_baseColor.r + 0.6f * s_baseColor.g + 0.1f * s_baseColor.b;
 
 	// Tint
-	float3 tintColor = baseColor / luminance;
+	//float3 tintColor = baseColor / luminance;
+	float3 tintColor = s_baseColor / luminance;
 
 	// NonMetalColor
 	float3 nonMetalColor = specular * 0.08f * tintColor;
 
 	// Metalness Specular Color
-	float3 specularColor = lerp(nonMetalColor, baseColor, metalness);
+	float3 specularColor = lerp(nonMetalColor, baseColor, s_metalness);
 
 	// NdotH SchlickFresnel
 	return SchlickFresnel3(specularColor, float3(1, 1, 1), LdotH);
@@ -63,7 +74,7 @@ float DistributionGGX(float alpha, float NdotH)
 float3 CookTorranceSpecular(float NdotL, float NdotV, float NdotH, float LdotH)
 {
 	// Distribution
-	float Ds = DistributionGGX(roughness * roughness, NdotH);
+	float Ds = DistributionGGX(s_roughness * s_roughness, NdotH);
 
 	// Fresnel
 	//float3 Fs = float3(1, 1, 1);
@@ -116,10 +127,10 @@ float3 BRDF(float3 L, float3 V)
 	// Extension reflectance
 	float diffuseReflectance = 1.0f / PI;
 
-	float energyBias = 0.5f * roughness;
+	float energyBias = 0.5f * s_roughness;
 
 	// Diffuse reflectance when angle is 90 degrees
-	float Fd90 = energyBias + 2 * LdotH * LdotH * roughness;
+	float Fd90 = energyBias + 2 * LdotH * LdotH * s_roughness;
 
 	// Diffuse reflectance when entering
 	float FL = SchlickFresnel(1.0f, Fd90, NdotL);
@@ -127,14 +138,14 @@ float3 BRDF(float3 L, float3 V)
 	// Diffuse reflectance when exiting
 	float FV = SchlickFresnel(1.0f, Fd90, NdotV);
 
-	float energyFactor = lerp(1.0f, 1.0f / 1.51f, roughness);
+	float energyFactor = lerp(1.0f, 1.0f / 1.51f, s_roughness);
 
 	// Diffuse reflectance until entering and exiting
 	float Fd = FL * FV * energyFactor;
 
 	// Enlargement
 	//float3 diffuseColor = diffuseReflectance * NdotL * baseColor * (1 - metalness);
-	float3 diffuseColor = diffuseReflectance * Fd * baseColor * (1 - metalness); // Schlick
+	float3 diffuseColor = diffuseReflectance * Fd * s_baseColor * (1 - s_metalness); // Schlick
 
 	// Specular Color
 	float3 specularColor = CookTorranceSpecular(NdotL, NdotV, NdotH, LdotH);
@@ -156,6 +167,11 @@ float4 main(VSOutput input) : SV_TARGET
 {
 	// Assign the surface information to a static variable so that it can be referenced from the function
 	N = input.normal;
+
+	s_baseColor = baseColor + baseTex.Sample(smp, input.uv).rgb;
+	s_metalness = metalness + metalnessTex.Sample(smp, input.uv).r;
+	s_roughness = roughness + roughnessTex.Sample(smp, input.uv).r;
+
 	// Final RBG
 	float3 finalRGB = float3(0, 0, 0);
 	// Direction vector from vertex to viewpoint

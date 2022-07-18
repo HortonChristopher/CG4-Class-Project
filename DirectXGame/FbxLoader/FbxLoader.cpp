@@ -300,6 +300,19 @@ void FbxLoader::ParseMaterial(Model* model, FbxNode* fbxNode)
                 model->baseColor.x = (float)baseColor.Buffer()[0];
                 model->baseColor.y = (float)baseColor.Buffer()[1];
                 model->baseColor.z = (float)baseColor.Buffer()[2];
+
+                const FbxFileTexture* texture = propBaseColor.GetSrcObject<FbxFileTexture>();
+                if (texture)
+                {
+                    const char* filepath = texture->GetFileName();
+
+                    string path_str(filepath);
+                    string name = ExtractFileName(path_str);
+
+                    LoadTexture(&model->baseTexture, baseDirectory + model->name + "/" + name);
+                    model->baseColor = { 0,0,0 };
+                    textureLoaded = true;
+                }
             }
 
             // Metallic Degree
@@ -308,6 +321,18 @@ void FbxLoader::ParseMaterial(Model* model, FbxNode* fbxNode)
             {
                 // Write the read value to the model
                 model->metalness = propMetalness.Get<float>();
+
+                const FbxFileTexture* texture = propMetalness.GetSrcObject<FbxFileTexture>();
+                if (texture)
+                {
+                    const char* filepath = texture->GetFileName();
+
+                    string path_str(filepath);
+                    string name = ExtractFileName(path_str);
+
+                    LoadTexture(&model->metalnessTexture, baseDirectory + model->name + "/" + name);
+                    model->metalness = 0.0f;
+                }
             }
 
             // Specular (Gamma?)
@@ -324,6 +349,18 @@ void FbxLoader::ParseMaterial(Model* model, FbxNode* fbxNode)
             {
                 // write the read value to the model
                 model->roughness = propSpecularRoughness.Get<float>();
+
+                const FbxFileTexture* texture = propSpecularRoughness.GetSrcObject<FbxFileTexture>();
+                if (texture)
+                {
+                    const char* filepath = texture->GetFileName();
+
+                    string path_str(filepath);
+                    string name = ExtractFileName(path_str);
+
+                    LoadTexture(&model->roughnessTexture, baseDirectory + model->name + "/" + name);
+                    model->roughness = 0.0f;
+                }
             }
 
             // Subsurface
@@ -381,23 +418,39 @@ void FbxLoader::ParseMaterial(Model* model, FbxNode* fbxNode)
                 // write the read value to the model
                 float coat = propCoat.Get<float>();
             }
+
+            // Normal map
+            const FbxProperty propNormalCamera = FbxSurfaceMaterialUtils::GetProperty("normalCamera", material);
+            if (propNormalCamera.IsValid())
+            {
+                const FbxFileTexture* texture = propNormalCamera.GetSrcObject<FbxFileTexture>();
+                if (texture)
+                {
+                    const char* filepath = texture->GetFileName();
+
+                    string path_str(filepath);
+                    string name = ExtractFileName(path_str);
+
+                    LoadTexture(&model->normalTexture, baseDirectory + model->name + "/" + name);
+                }
+            }
         }
 
         // If there is no texture, paste a white texture
         if (!textureLoaded)
         {
-            LoadTexture(model, baseDirectory + defaultTextureFileName);
+            LoadTexture(&model->baseTexture, baseDirectory + defaultTextureFileName);
         }
     }
 }
 
-void FbxLoader::LoadTexture(Model* model, const std::string& fullpath)
+void FbxLoader::LoadTexture(TextureData* texdata, const std::string& fullpath)
 {
     HRESULT result = S_FALSE;
 
     // load WIC texture
-    TexMetadata& metadata = model->metadata;
-    ScratchImage& scratchImg = model->scratchImg;
+    TexMetadata& metadata = texdata->metadata;
+    ScratchImage& scratchImg = texdata->scratchImg;
 
     // Convert to unicode string
     wchar_t wfilepath[128];

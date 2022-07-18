@@ -191,15 +191,18 @@ void Object3d::CreateGraphicsPipeline()
 	gpipeline.SampleDesc.Count = 1; // Sampling once per pixel
 
 	// Descriptor range
-	CD3DX12_DESCRIPTOR_RANGE descRangeSRV;
-	descRangeSRV.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0); // t0 register
+	CD3DX12_DESCRIPTOR_RANGE descRangeSRVs[4];
+	descRangeSRVs[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0); // t0 register
+	descRangeSRVs[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 1); // t1 register
+	descRangeSRVs[2].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 2); // t2 register
+	descRangeSRVs[3].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 3); // t3 register
 
 	// ルートパラメータ
 	CD3DX12_ROOT_PARAMETER rootparams[4];
 	// CBV (for coordinate transformation matrix)
 	rootparams[0].InitAsConstantBufferView(0, 0, D3D12_SHADER_VISIBILITY_ALL);
 	// SRV (texture)
-	rootparams[1].InitAsDescriptorTable(1, &descRangeSRV, D3D12_SHADER_VISIBILITY_ALL);
+	rootparams[1].InitAsDescriptorTable(_countof(descRangeSRVs), descRangeSRVs, D3D12_SHADER_VISIBILITY_ALL);
 	// CBV (Material) b1 Register
 	rootparams[2].InitAsConstantBufferView(1, 0, D3D12_SHADER_VISIBILITY_ALL);
 	// CBV (Light) b2 Register

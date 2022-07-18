@@ -69,7 +69,7 @@ public:
 	void ParseMaterial(Model* model, FbxNode* fbxNode);
 
 	// Texture reading
-	void LoadTexture(Model* model, const std::string& fullpath);
+	void LoadTexture(TextureData* texdata, const std::string& fullpath);
 
 	std::string ExtractFileName(const std::string& path);
 
